@@ -14,14 +14,16 @@ import (
 )
 
 type File struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
-	Name      string             `json:"name" bson:"name"`
-	Size      float64            `json:"size" bson:"size"`
-	S3Url     string             `json:"s3Url" bson:"s3Url"`
-	Type      string             `json:"type" bson:"type"`
-	IsGroup   bool               `json:"isGroup" bson:"isGroup"`
-	CreatedAt time.Time          `json:"createdAt" bson:"createdAt"`
-	ExpiresAt time.Time          `json:"expiresAt" bson:"expiresAt"`
+	ID        primitive.ObjectID   `bson:"_id,omitempty" json:"_id,omitempty"`
+	Name      string               `json:"name" bson:"name"`
+	Size      float64              `json:"size" bson:"size"`
+	S3Url     string               `json:"s3Url" bson:"s3Url"`
+	Type      string               `json:"type" bson:"type"`
+	IsGroup   bool                 `json:"isGroup" bson:"isGroup"`
+	To        []primitive.ObjectID `json:"to" bson:"to"`
+	From      primitive.ObjectID   `json:"from" bson:"from"`
+	CreatedAt time.Time            `json:"createdAt" bson:"createdAt"`
+	ExpiresAt time.Time            `json:"expiresAt" bson:"expiresAt"`
 }
 
 func Routes(configuration *config.Config) *chi.Mux {
@@ -37,7 +39,7 @@ func GetUserFiles(configuration *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := chi.URLParam(r, "userId")
 		objectID, _ := primitive.ObjectIDFromHex(userID)
-		filter := bson.D{{"to", objectID}}
+		filter := bson.D{{Key: "to", Value: objectID}}
 
 		collection := configuration.Database.Collection("files")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
