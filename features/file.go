@@ -2,6 +2,8 @@ package file
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -28,11 +30,34 @@ type File struct {
 
 func Routes(configuration *config.Config) *chi.Mux {
 	router := chi.NewRouter()
-	// router.Post("/", CreateFile(configuration))
+	router.Post("/", CreateFile(configuration))
 	// router.Delete("/{userId}/files/{fileId}", DeleteFile(configuration))
 	// router.Get("/", GetAllFiles(configuration))
 	router.Get("/{userId}", GetUserFiles(configuration)) // MOVE TO USER
 	return router
+}
+
+func CreateFile(configuration *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		collection := configuration.Database.Collection("files")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		file := &File{}
+		er := json.NewDecoder(r.Body).Decode(file)
+		if er != nil {
+			log.Fatal(er)
+		}
+
+		file.CreatedAt = time.Now()
+
+		insertResult, err := collection.InsertOne(ctx, file)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		render.JSON(w, r, insertResult)
+	}
 }
 
 func GetUserFiles(configuration *config.Config) http.HandlerFunc {
